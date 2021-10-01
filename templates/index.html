@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/index-style.css') }}">
+</head>
+<body>
+    
+    <h1>Audits</h1>
+    <div>
+        <form action="http://127.0.0.1:5000/search" method="get">
+            <label>
+                Search (reg_key):
+                <input name="value" class="search">
+                <input type="submit" value="Search" class="btn">
+            </label>
+        </form>
+        {% if search != NULL %}
+        <p>Search results:</p>
+        {% if search|length > 0 %}
+        <table>
+            {% for policy in search %}
+            <tr>
+                <td>
+                    <form action="http://127.0.0.1:5000/export" method="get" target="_blank">
+                        <input type="hidden" name="index" value="{{ policy['index'] }}">
+                        <input type="submit" value="Export" class="btn">
+                    </form>
+                </td>
+                {% for key in policy %}
+                <td>{{key}}: {{policy[key]}}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>No matches</p>
+        {% endif %}
+        {% endif %}
+    </div>
+    <button class="selectAll" >Select all</button>
+    <button disabled="true" class="downloadSelected">Download selected</button>
+    <table>
+        {% for policy in data %}
+        <tr>
+            <td>
+                <input type="checkbox" (change)="onCheckboxChange({{ policy['index'] }})">
+            </td>
+            <td>
+                <form action="http://127.0.0.1:5000/export" method="get" target="_blank">
+                    <input type="hidden" name="index" value="{{ policy['index'] }}">
+                    <input type="submit" value="Export" class="btn">
+                </form>
+            </td>
+            {% for key in policy %}
+            <td>{{key}}: {{policy[key]}}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+
+    <script type="application/javascript">
+        selected = []
+        allSelected = false;
+
+        downloadSelected = document.querySelector('.downloadSelected')
+        selectAll = document.querySelector('.selectAll')
+        checkboxes = document.querySelectorAll('[type=checkbox]')
+
+        checkboxes.forEach(c => c.addEventListener('change', ($event) => {
+            index = Array.prototype.indexOf.call(checkboxes, $event.target)
+            if (selected.includes(index))
+                selected = selected.filter(i => i !== index)
+            else
+                selected.push(index);
+            
+            this.downloadSelected.disabled = selected.length < 1;
+        }))
+
+        
+        selectAll.addEventListener('click', () => {
+            if (allSelected) {
+                checkboxes.forEach(c => c.checked=false);
+                selected = [];
+                selectAll.innerText = 'Select All';
+            } else {
+                checkboxes.forEach(c => c.checked=true);
+                selected = [...Array(checkboxes.length).keys()];
+                selectAll.innerText = 'Unselect All';
+            }
+            allSelected = !allSelected;
+            this.downloadSelected.disabled = selected.length < 1;
+        });
+
+
+        downloadSelected.addEventListener('click', () => {
+            let xhr = new XMLHttpRequest();
+            xhr.open('POST', '/export', true);
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = ($event) => {
+                if(xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) {
+                    downloadFile(xhr.response)
+                }
+            }
+            xhr.send(JSON.stringify({ value: selected.toString()}));
+        })
+
+
+        function downloadFile(data) {
+            var file = new Blob([data], {type: 'application/json'});
+            var a = document.createElement("a"),
+            url = URL.createObjectURL(file);
+            a.href = url;
+            a.download = 'export.json';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 0);
+        }
+    </script>
+
+</body>
+</html>

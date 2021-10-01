@@ -1,0 +1,18 @@
+
+table {
+    max-height: 600px;
+    overflow: auto;
+    margin-top: 40px;
+    display: block;
+}
+
+td {
+    border: 1px solid #000;
+    max-width: 400px;
+    word-break: break-all;
+}
+
+.btn {
+    width: 80px;
+    padding: 8px 12px;
+}
