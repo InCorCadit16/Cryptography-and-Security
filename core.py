@@ -1,7 +1,5 @@
-import json
 
-
-FILE_NAME = 'CIS_MS_Windows_10_Enterprise_Level_1_v1.10.1.audit'
+FILE_NAME = 'audit_files/CIS_MS_Windows_10_Enterprise_Level_1_v1.10.1.audit'
 
 def parse():
     with open(FILE_NAME) as file:
