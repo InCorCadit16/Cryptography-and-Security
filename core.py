@@ -1,5 +1,12 @@
+import json
+import os
+import subprocess
+import re
 
 FILE_NAME = 'audit_files/CIS_MS_Windows_10_Enterprise_Level_1_v1.10.1.audit'
+TEMP_FILE = 'temp.json'
+
+
 
 def parse():
     with open(FILE_NAME) as file:
@@ -30,3 +37,62 @@ def parse():
     for index in range(0, len(customs)):
         customs[index]['index'] = index
     return customs
+
+
+data = parse()
+
+
+def write_export(ids):
+    if os.path.exists(TEMP_FILE):
+        os.remove(TEMP_FILE)
+
+    result = list(filter(lambda p: p['index'] in ids, data))
+    if len(result) == 1: result = result[0]
+    with open(TEMP_FILE, 'w') as output:
+        json.dump(result, output)
+
+
+def check_policies(ids):
+    policies = list(filter(lambda p: p['index'] in ids, data))
+    result = []
+    for policy in policies:
+        response = subprocess.run(['reg', 'query', policy['reg_key'], '/v', policy['reg_item']], capture_output=True)
+        if response.returncode == 1:
+            result.append(error(policy, response.stderr.decode('utf-8')[7:]))
+            continue
+
+        value = response.stdout.decode('utf-8').split('\n')[2].strip().split(4 * ' ').pop()
+        result.append(check_value(policy, value))
+    return result
+
+
+def error(policy, error):
+    return {'policy': policy, 'success': False, 'message': error}
+
+
+def plain_response():
+    return {'policy': None, 'success': False, 'message': ''}
+
+
+def check_value(policy, value):
+    type = policy['value_type']
+
+    result = plain_response()
+    result['policy'] = policy
+    if policy['check_type'] == 'CHECK_REGEX':
+        exp = re.compile(policy['value_data'])
+        if exp.match(value) is not None:
+            result['success'] = True
+        else:
+            result['message'] = f'Value {value} doesn\'t pass the policy.'
+    elif type == 'POLICY_DWORD' or type == 'POLICY_TEXT' or type == 'POLICY_MULTI_TEXT':
+        if type == 'POLICY_DWORD':
+            value = str(int(value, 16))
+        if policy['value_data'] == value:
+            result['success'] = True
+        else:
+            result['message'] = f'Expected value: {policy["value_data"]}. Actual: {value}.'
+    else:
+        return error(policy, 'Unknown policy type')
+
+    return result

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Audit</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/index-style.css') }}">
+</head>
+<body>
+    <h1>Test Policies Results:</h1>
+
+    <table>
+        {% for checkResult in result %}
+        <tr>
+            <td>
+                <input type="checkbox">
+            </td>
+            <td>{{checkResult.policy.index}}</td>
+            <td>{{checkResult.policy['reg_key']}}</td>
+            <td>{{checkResult.policy['reg_item']}}</td>
+            <td>{% if checkResult.success %} <p class="passed">PASSED</p> {% else %} <p class="failed">FAILED</p> {% endif %}</td>
+            <td>{% if not checkResult.success %} Reason: {{ checkResult.message }} {% endif %}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

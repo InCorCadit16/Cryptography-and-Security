@@ -1,2 +1,4 @@
 *.json
 audit_files/
+.idea/
+__pycache__/

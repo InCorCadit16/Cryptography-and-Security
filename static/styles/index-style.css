@@ -16,3 +16,16 @@ td {
     width: 80px;
     padding: 8px 12px;
 }
+
+.passed,
+.failed {
+    text-transform: uppercase;
+}
+
+.passed {
+    color: green;
+}
+
+.failed {
+    color: red;
+}
