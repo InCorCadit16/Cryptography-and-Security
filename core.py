@@ -2,10 +2,10 @@ import json
 import os
 import subprocess
 import re
+import winreg
 
 FILE_NAME = 'audit_files/CIS_MS_Windows_10_Enterprise_Level_1_v1.10.1.audit'
 TEMP_FILE = 'temp.json'
-
 
 
 def parse():
@@ -96,3 +96,18 @@ def check_value(policy, value):
         return error(policy, 'Unknown policy type')
 
     return result
+
+
+def enforce(ids):
+    policies = list(filter(lambda p: p['index'] in ids, data))
+
+    # import winreg
+    # key = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, "System\CurrentControlSet\Control\Lsa")
+    # value, type = winreg.QueryValueEx(key, "SecureBoot")
+    # result = winreg.SetValueEx(key, "SecureBoot", 0, winreg.REG_DWORD, 2)
+
+    for policy in policies:
+        response = subprocess.run(
+            ['reg', 'add', "HKLM\System\CurrentControlSet\Control\Lsa",'/f', '/v', "SecureBoot", '/d', '"2"'],
+            capture_output=True
+        )

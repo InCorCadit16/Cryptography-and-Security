@@ -8,12 +8,16 @@
 <body>
     <h1>Test Policies Results:</h1>
 
+    <button disabled="true" class="enforceSelected">Enforce selected</button>
+
     <table>
         {% for checkResult in result %}
         <tr>
+            {% if not checkResult.seccess %}
             <td>
                 <input type="checkbox">
             </td>
+            {% endif %}
             <td>{{checkResult.policy.index}}</td>
             <td>{{checkResult.policy['reg_key']}}</td>
             <td>{{checkResult.policy['reg_item']}}</td>
@@ -22,5 +26,7 @@
         </tr>
         {% endfor %}
     </table>
+
+    <script type="application/javascript" src="{{ url_for('static', filename='script/check.js') }}"></script>
 </body>
 </html>
