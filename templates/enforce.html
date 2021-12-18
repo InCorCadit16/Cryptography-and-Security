@@ -6,10 +6,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/index-style.css') }}">
 </head>
 <body>
-    <button onclick="location.reload()">Back</button>
-    <h1>Test Policies Results:</h1>
-
-    <button disabled="true" class="enforceSelected">Enforce selected</button>
+    <h1>Enforce Policies Results:</h1>
 
     <table>
         {% for checkResult in result %}

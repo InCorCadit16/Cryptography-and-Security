@@ -1,10 +1,11 @@
-let selected = []
-let allSelected = false;
+
+var selected = []
+var allSelected = false;
 
 const downloadBtn = document.querySelector('.downloadSelected');
 const selectAllBtn = document.querySelector('.selectAll');
 const testBtn = document.querySelector('.testSelected');
-const checkboxes = document.querySelectorAll('[type=checkbox]');
+var checkboxes = document.querySelectorAll('[type=checkbox]');
 
 
 checkboxes.forEach(c => c.addEventListener('change', ($event) => {

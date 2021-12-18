@@ -5,6 +5,7 @@ from core import data, write_export, TEMP_FILE, check_policies, enforce
 app = Flask('Audit')
 app.secret_key = 'secret'
 
+
 @app.route('/')
 def get_policies():
     return render_template('index.html', data=data)
@@ -28,11 +29,11 @@ def test():
     check_result = check_policies(request.json)
     return render_template('check.html', result=check_result)
 
-@app.route('/enforce', methods=['POST'])
-def enforce():
-    enforce_result = enforce(request.json)
-    return enforce_result
 
+@app.route('/enforce', methods=['POST'])
+def enforce_policies():
+    enforce_result = enforce(ids=request.json)
+    return render_template('enforce.html', result=enforce_result)
 
 
 if __name__ == '__main__':

@@ -2,7 +2,6 @@ import json
 import os
 import subprocess
 import re
-import winreg
 
 FILE_NAME = 'audit_files/CIS_MS_Windows_10_Enterprise_Level_1_v1.10.1.audit'
 TEMP_FILE = 'temp.json'
@@ -36,6 +35,7 @@ def parse():
     customs = list(filter(lambda d: 'reg_key' in d, customs))
     for index in range(0, len(customs)):
         customs[index]['index'] = index
+
     return customs
 
 
@@ -47,7 +47,8 @@ def write_export(ids):
         os.remove(TEMP_FILE)
 
     result = list(filter(lambda p: p['index'] in ids, data))
-    if len(result) == 1: result = result[0]
+    if len(result) == 1:
+        result = result[0]
     with open(TEMP_FILE, 'w') as output:
         json.dump(result, output)
 
@@ -75,18 +76,19 @@ def plain_response():
 
 
 def check_value(policy, value):
-    type = policy['value_type']
+    type = policy['value_type'] if 'value_type' in policy else 'POLICY_TEXT'
 
     result = plain_response()
     result['policy'] = policy
-    if policy['check_type'] == 'CHECK_REGEX':
+    if 'check_type' in policy and 'value_data' in policy and policy['check_type'] == 'CHECK_REGEX':
         exp = re.compile(policy['value_data'])
         if exp.match(value) is not None:
             result['success'] = True
         else:
             result['message'] = f'Value {value} doesn\'t pass the policy.'
-    elif type == 'POLICY_DWORD' or type == 'POLICY_TEXT' or type == 'POLICY_MULTI_TEXT':
+    elif 'value_data' in policy and (type == 'POLICY_DWORD' or type == 'POLICY_TEXT' or type == 'POLICY_MULTI_TEXT'):
         if type == 'POLICY_DWORD':
+            value = value[1:-1] if value[0] == '"' and value[-1] == '"' else value
             value = str(int(value, 16))
         if policy['value_data'] == value:
             result['success'] = True
@@ -101,13 +103,21 @@ def check_value(policy, value):
 def enforce(ids):
     policies = list(filter(lambda p: p['index'] in ids, data))
 
-    # import winreg
-    # key = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, "System\CurrentControlSet\Control\Lsa")
-    # value, type = winreg.QueryValueEx(key, "SecureBoot")
-    # result = winreg.SetValueEx(key, "SecureBoot", 0, winreg.REG_DWORD, 2)
+    result = []
 
     for policy in policies:
+        if 'value_data' not in policy:
+            result.append(error(policy, 'Failed to find value'))
+            continue
+
         response = subprocess.run(
-            ['reg', 'add', "HKLM\System\CurrentControlSet\Control\Lsa",'/f', '/v', "SecureBoot", '/d', '"2"'],
+            ['reg', 'add', policy['reg_key'], '/f', '/v', policy['reg_item'], '/d', f'"{policy["value_data"]}"'],
             capture_output=True
         )
+
+        if response.returncode == 1:
+            result.append(error(policy, response.stderr.decode('utf-8')[7:]))
+        else:
+            result.append({'policy': policy, 'success': True, 'message': 'policy enforced'})
+
+    return result
